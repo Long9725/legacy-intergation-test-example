@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CarDaoImpl">
+
+    <insert id="save" parameterType="java.util.Map">
+        INSERT INTO ${schema}.cars (id, name, created_at, updated_at, deleted_at)
+        VALUES (#{id}, #{name}, #{created_at}, #{updated_at}, #{deleted_at})
+        ON CONFLICT (id)
+            DO UPDATE SET name       = EXCLUDED.name,
+                          updated_at = now(),
+                          deleted_at = EXCLUDED.deleted_at
+    </insert>
+
+    <select id="findById" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT *
+        FROM ${schema}.cars
+        WHERE id = #{id};
+    </select>
+
+</mapper>
