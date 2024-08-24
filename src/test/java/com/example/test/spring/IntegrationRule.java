@@ -1,17 +1,22 @@
-package com.example.test.config;
+package com.example.test.spring;
 
+import com.example.test.config.MyBatisConfig;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.*;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.datasource.init.DatabasePopulator;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
+import org.springframework.test.context.junit4.rules.SpringClassRule;
+import org.springframework.test.context.junit4.rules.SpringMethodRule;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
@@ -23,7 +28,19 @@ import java.sql.Statement;
 @ContextConfiguration(classes = MyBatisConfig.class)
 @Transactional
 @Slf4j
-public abstract class MyBatisIntegrationTest extends AbstractJUnit4SpringContextTests {
+public abstract class IntegrationRule {
+    @ClassRule
+    public static final SpringClassRule springClassRule = new SpringClassRule();
+
+    @ClassRule
+    public static WireMockClassRule wireMockClassRule = new WireMockClassRule(WireMockConfiguration.wireMockConfig().dynamicPort());
+
+    @Rule
+    public final SpringMethodRule springMethodRule = new SpringMethodRule();
+
+    @Rule
+    public final MockitoRule mockitoRule = MockitoJUnit.rule();
+
     private static EmbeddedPostgres embeddedPostgres;
 
     @Autowired

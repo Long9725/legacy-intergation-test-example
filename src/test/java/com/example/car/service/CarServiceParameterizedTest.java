@@ -6,26 +6,31 @@ import com.example.car.client.PurgoMalumClient;
 import com.example.car.dao.CarDao;
 import com.example.car.entity.Car;
 import com.example.car.mapper.CarMapper;
-import com.example.test.config.MyBatisIntegrationTest;
+import com.example.test.fixture.CarTestFixture;
+import com.example.test.spring.IntegrationRule;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import feign.Feign;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.example.test.spring.IntegrationRule.wireMockClassRule;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,44 +38,44 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-@ContextConfiguration(classes = CarServiceTestConfiguration.class)
-public class CarServiceTest extends MyBatisIntegrationTest {
-    @Autowired
-    private  CarService carService;
+@RunWith(Parameterized.class)
+@ContextConfiguration(classes = CarServiceParameterizedTestConfiguration.class)
+public class CarServiceParameterizedTest extends IntegrationRule {
+    private static final List<String> badwords = Arrays.asList("fuck", "bitch", "asshole", "damn");
 
     @Autowired
-    private  WireMockServer wireMockServer;
-
-    private static WireMockServer wireMockServerForStop;
+    private CarService carService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Before
-    public void setUpClass() {
-        if(wireMockServerForStop == null) {
-            wireMockServerForStop = wireMockServer;
-        }
-    }
+    @Parameterized.Parameter(0)
+    public String goodCarName;
 
-    @AfterClass
-    public static void teardownClass() {
-        if(wireMockServerForStop != null) {
-            wireMockServerForStop.stop();
-        }
-    }
+    @Parameterized.Parameter(1)
+    public String badCarName;
 
+    @Parameterized.Parameters(name = "{index}: Test with goodName={0}, badName={1}")
+    public static Collection<Object[]> data() {
+        final int size = 100;
+        final List<String> goodCarNames = CarTestFixture.getNameStrings(size);
+        final List<String> badCarNames = CarTestFixture.getBadWordNameStrings(badwords, size);
+
+        return IntStream.range(0, size)
+                .mapToObj(i -> new Object[]{goodCarNames.get(i), badCarNames.get(i)})
+                .collect(Collectors.toList());
+    }
 
     @Test
     public void createCarTest() throws JsonProcessingException {
         // given
-        final String carName = "This is test car name";
+        final String carName = goodCarName;
 
         // given - client
         final ProfanityJsonResponse response = ProfanityJsonResponse.builder()
-                .result("This is test car name")
+                .result(carName)
                 .build();
 
-        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
+        wireMockClassRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
                 .withQueryParam("text", equalTo(carName))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -88,14 +93,19 @@ public class CarServiceTest extends MyBatisIntegrationTest {
     @Test
     public void createCarExceptionTest() throws JsonProcessingException {
         // given
-        final String carName = "This is test car name fuck";
+        final String carName = badCarName;
 
         // given - client
+        final String filteredName = badwords.stream()
+                .filter(carName::contains)
+                .findFirst()
+                .map(badword -> carName.replaceAll(badword, "*"))
+                .orElseThrow(() -> new IllegalArgumentException("잘못된 테스트 케이스입니다."));
         final ProfanityJsonResponse response = ProfanityJsonResponse.builder()
-                .result("This is test car name ****")
+                .result(filteredName)
                 .build();
 
-        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
+        wireMockClassRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
                 .withQueryParam("text", equalTo(carName))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -113,19 +123,10 @@ public class CarServiceTest extends MyBatisIntegrationTest {
         CarMapper.class,
         ProfanityFilterService.class,
 })
-class CarServiceTestConfiguration {
+class CarServiceParameterizedTestConfiguration {
     @Bean
-    public WireMockServer wireMockServer() {
-        final WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
-
-        wireMockServer.start();
-
-        return wireMockServer;
-    }
-
-    @Bean
-    public PurgoMalumClient purgoMalumClient(final WireMockServer wireMockServer) {
-        final String apiUrl = "http://localhost:" + wireMockServer.port();
+    public PurgoMalumClient purgoMalumClient() {
+        final String apiUrl = "http://localhost:" + wireMockClassRule.port();
         return Feign.builder()
                 .encoder(new JacksonEncoder())
                 .decoder(new JacksonDecoder())

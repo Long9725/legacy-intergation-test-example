@@ -2,33 +2,32 @@ package com.example.car.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import feign.Feign;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static org.assertj.core.api.Assertions.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PurgoMalumClientTest {
-    private WireMockServer wireMockServer;
-    private PurgoMalumClient purgoMalumClient;
-    private String apiUrl;
+    @ClassRule
+    public static WireMockClassRule wireMockClassRule = new WireMockClassRule(WireMockConfiguration.wireMockConfig().dynamicPort());
+
+    private static PurgoMalumClient purgoMalumClient;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Before
-    public void setup() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
-        wireMockServer.start();
-
-        apiUrl = "http://localhost:" + wireMockServer.port();
+    @BeforeClass
+    public static void setUp() {
+        final String apiUrl = "http://localhost:" + wireMockClassRule.port();
 
         purgoMalumClient = Feign.builder()
                 .encoder(new JacksonEncoder())
@@ -36,9 +35,9 @@ public class PurgoMalumClientTest {
                 .target(PurgoMalumClient.class, apiUrl);
     }
 
-    @After
-    public void teardown() {
-        wireMockServer.stop();
+    @AfterClass
+    public static void teardown() {
+        wireMockClassRule.stop();
     }
 
     @Test
@@ -48,7 +47,7 @@ public class PurgoMalumClientTest {
                 .result("this is some test ****")
                 .build();
 
-        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
+        wireMockClassRule.stubFor(WireMock.get(WireMock.urlPathEqualTo("/json"))
                 .withQueryParam("text", equalTo(profanity))
                 .willReturn(aResponse()
                         .withStatus(200)

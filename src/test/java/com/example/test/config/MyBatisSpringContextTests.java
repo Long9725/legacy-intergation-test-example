@@ -1,5 +1,6 @@
 package com.example.test.config;
 
+import com.example.test.spring.AbstractSpringContextTests;
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.AfterClass;
@@ -11,7 +12,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.datasource.init.DatabasePopulator;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
@@ -23,7 +23,7 @@ import java.sql.Statement;
 @ContextConfiguration(classes = MyBatisConfig.class)
 @Transactional
 @Slf4j
-public abstract class MyBatisIntegrationTest extends AbstractJUnit4SpringContextTests {
+public abstract class MyBatisSpringContextTests extends AbstractSpringContextTests {
     private static EmbeddedPostgres embeddedPostgres;
 
     @Autowired

@@ -29,6 +29,10 @@
         <junit.version>4.13.2</junit.version>
         <mockito.version>4.11.0</mockito.version>
         <assertj.version>3.24.2</assertj.version>
+        <fixture.monkey.version>1.0.23</fixture.monkey.version>
+        <junit-vintage-engine.version>5.9.3</junit-vintage-engine.version>
+        <jaxws-rt.version>4.0.1</jaxws-rt.version>
+        <rgxgen.version>2.0</rgxgen.version>
     </properties>
 
     <repositories>
@@ -239,6 +243,38 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
             <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Fixture Monkey Starter -->
+        <dependency>
+            <groupId>com.navercorp.fixturemonkey</groupId>
+            <artifactId>fixture-monkey-starter</artifactId>
+            <version>${fixture.monkey.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit Vintage Engine (JUnit 4 호환성 지원) -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit-vintage-engine.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JAX-WS Runtime -->
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-rt</artifactId>
+            <version>${jaxws-rt.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- RgxGen (Regular Expression Generator) -->
+        <dependency>
+            <groupId>com.github.curious-odd-man</groupId>
+            <artifactId>rgxgen</artifactId>
+            <version>${rgxgen.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
